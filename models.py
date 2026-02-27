@@ -28,6 +28,7 @@ class Role(db.Model):
 class User(db.Model):
   id: Mapped[int] = mapped_column(primary_key=True)
   username: Mapped[str] = mapped_column(nullable=False)
+  email: Mapped[str] = mapped_column(String(128) , nullable=False , unique=True)
   password: Mapped[str] = mapped_column(String(255), nullable=False)
   role_id : Mapped[int] = mapped_column(ForeignKey("role.id"))
   
