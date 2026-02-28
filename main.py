@@ -1,7 +1,7 @@
 from flask import Flask , render_template , request , url_for
 from models import (db , User , Role)
 from sqlalchemy import (select)
-from wtforms import BooleanField, StringField, PasswordField, validators, SelectField
+from wtforms import BooleanField, StringField, PasswordField, validators, SelectField, SubmitField
 from flask_wtf import FlaskForm
 from flask_login import LoginManager
 
@@ -68,6 +68,7 @@ class RegistrationForm(FlaskForm):
     ])
     role = SelectField('Role', choices=[('admin', 'Admin'), ('provider', 'Provider'), ('patient', 'Patient')])
     confirm = PasswordField('Repeat Password')
+    submit = SubmitField('Register')
 
 # routes
 
