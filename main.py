@@ -1,9 +1,9 @@
-from flask import Flask , render_template , request , url_for
+from flask import Flask , render_template , request , url_for , redirect
 from models import (db , User , Role)
 from sqlalchemy import (select)
 from wtforms import BooleanField, StringField, PasswordField, validators, SelectField, SubmitField
 from flask_wtf import FlaskForm
-from flask_login import LoginManager
+from flask_login import LoginManager, login_user, current_user
 
 
 
@@ -75,6 +75,35 @@ class RegistrationForm(FlaskForm):
 # default page -> go to self registraton user
 @app.route("/" , methods=["GET" , "POST"])
 def register_user():
+    if request.method == "POST":
+        form = RegistrationForm(request.form)        
+        if form.validate_on_submit():
+           # role must exist and user must be authenticated if role is not patient
+            if form.role.data not in ["admin", "provider", "patient"]:
+                return render_template('register-user.html' , form=form , errors=["Invalid role"])
+            # user must be authenticated if role is not patient
+            if not current_user.is_authenticated and form.role.data in ["admin", "provider"]:
+                return render_template('register-user.html' , form=form , errors=["User must be authenticated"])
+
+            # Look up Role by name; User.role expects a Role instance, not a string
+            role = db.session.scalar(select(Role).where(Role.name == form.role.data))
+            if not role:
+                return render_template('register-user.html', form=form, errors=["Invalid role"])
+
+            # register the user(patient,admin,provider)
+            new_user = User(
+                username=form.username.data,
+                email=form.email.data,
+                password=form.password.data,
+                role=role
+            )
+            db.session.add(new_user)
+            db.session.commit()
+            login_user(new_user)
+            return redirect(url_for('dashboard'))
+        else:
+            return render_template('register-user.html' , form=form , errors=form.errors)
+    
     return render_template('register-user.html' , form=RegistrationForm())
 
 @app.route("/login" , methods=["GET" , "POST"])
