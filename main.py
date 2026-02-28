@@ -3,7 +3,8 @@ from models import (db , User , Role)
 from sqlalchemy import (select)
 from wtforms import BooleanField, StringField, PasswordField, validators, SelectField, SubmitField
 from flask_wtf import FlaskForm
-from flask_login import LoginManager, login_user, current_user
+from flask_login import LoginManager, login_user, current_user, login_required
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 
@@ -112,6 +113,24 @@ class RegistrationForm(FlaskForm):
         if not re.search(r"[0-9]", password):
             raise ValidationError("Password must contain at least one number.")
 
+class LoginForm(FlaskForm):
+    email = StringField(
+        'Email Address',
+        validators=[
+            validators.DataRequired(),
+            validators.Length(min=6, max=35),
+            validators.Email(message="Invalid email format")
+        ]
+    )
+    password = PasswordField(
+        'Password',
+        validators=[
+            validators.DataRequired(),
+            validators.Length(min=8, max=25)
+        ]
+    )
+    submit = SubmitField('Login')
+
 # routes
 
 # default page -> go to self registraton user
@@ -120,9 +139,6 @@ def register_user():
     if request.method == "POST":
         form = RegistrationForm(request.form)        
         if form.validate_on_submit():
-           # role must exist and user must be authenticated if role is not patient
-            if form.role.data not in ["admin", "provider", "patient"]:
-                return render_template('register-user.html' , form=form , errors=["Invalid role"])
             # user must be authenticated if role is not patient
             if not current_user.is_authenticated and form.role.data in ["admin", "provider"]:
                 return render_template('register-user.html' , form=form , errors=["User must be authenticated"])
@@ -136,13 +152,13 @@ def register_user():
             new_user = User(
                 username=form.username.data,
                 email=form.email.data,
-                password=form.password.data,
+                password=generate_password_hash(form.password.data),
                 role=role
             )
             db.session.add(new_user)
             db.session.commit()
             login_user(new_user)
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('login'))
         else:
             return render_template('register-user.html' , form=form , errors=form.errors)
     
@@ -150,9 +166,21 @@ def register_user():
 
 @app.route("/login" , methods=["GET" , "POST"])
 def login():
-    return render_template('login.html')
+    if request.method == "POST":
+        form = LoginForm(request.form)
+        if form.validate_on_submit():
+            user = db.session.scalar(select(User).where(User.email == form.email.data))
+            if user and check_password_hash(user.password, form.password.data):
+                login_user(user)
+                return redirect(url_for('dashboard'))
+            else:
+                return render_template('login.html' , form=form , errors={"_form": ["Invalid email or password"]})
+        else:
+            return render_template('login.html' , form=form , errors=form.errors)
+    return render_template('login.html' , form=LoginForm())
 
 @app.route("/dashboard" , methods=["GET"])
+@login_required
 def dashboard():
     return render_template('dashboard.html')
 
