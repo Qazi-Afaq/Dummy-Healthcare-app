@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block head %} 
+<title>Register Patient</title>
+{% endblock%}
+
+{% block body %} 
+<h1>Register Patient</h1>
+{% if errors %}
+    <div style="color: red;">
+        <h4>Invalid Form:</h4>
+        <ul>
+            {% for error in errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+<form action="{{ url_for('register_user') }}" method="POST">
+    <input type="email" name="email" placeholder="Enter email" required>
+    <input type="text" name="username" placeholder="Enter username" required>
+    <input type="password" name="password" placeholder="Enter password" required>
+    <input type="submit" value="Register Patient">
+
+</form>
+{% endblock%}
+

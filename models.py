@@ -34,6 +34,3 @@ class User(UserMixin, db.Model):
   role_id : Mapped[int] = mapped_column(ForeignKey("role.id"))
   
   role: Mapped["Role"] = relationship("Role", back_populates="users")
-
-
-  user: Mapped["User"] = relationship("User", back_populates="sessions")

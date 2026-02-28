@@ -59,16 +59,58 @@ with app.app_context():
     db.session.commit()
 
 # forms
+from wtforms import ValidationError
+import re
+
 class RegistrationForm(FlaskForm):
-    username = StringField('Username', validators=[validators.DataRequired(), validators.Length(min=4, max=25)])
-    email = StringField('Email Address', validators=[validators.DataRequired(), validators.Length(min=6, max=35)])
-    password = PasswordField('New Password', [
-        validators.DataRequired(),
-        validators.EqualTo('confirm', message='Passwords must match')
-    ])
-    role = SelectField('Role', choices=[('admin', 'Admin'), ('provider', 'Provider'), ('patient', 'Patient')])
+    username = StringField(
+        'Username',
+        validators=[
+            validators.DataRequired(),
+            validators.Length(min=3, max=25)
+        ]
+    )
+    email = StringField(
+        'Email Address',
+        validators=[
+            validators.DataRequired(),
+            validators.Length(min=6, max=35),
+            validators.Email(message="Invalid email format")
+        ]
+    )
+    password = PasswordField(
+        'New Password',
+        validators=[
+            validators.DataRequired(),
+            validators.EqualTo('confirm', message='Passwords must match')
+        ]
+    )
     confirm = PasswordField('Repeat Password')
+    role = SelectField(
+        'Role',
+        choices=[('admin', 'Admin'), ('provider', 'Provider'), ('patient', 'Patient')]
+    )
     submit = SubmitField('Register')
+
+    # validate email uniqueness
+    def validate_email(self, field):
+        if db.session.scalar(select(User).where(User.email == field.data)):
+            raise ValidationError("Email already exists.")
+
+    # Custom validation for username
+    def validate_username(self, field):
+        if not field.data.isalnum():
+            raise ValidationError("Username must be alphanumeric.")
+
+    # Custom validation for password complexity
+    def validate_password(self, field):
+        password = field.data
+        if len(password) < 8:
+            raise ValidationError("Password must be at least 8 characters.")
+        if not re.search(r"[A-Z]", password):
+            raise ValidationError("Password must contain at least one uppercase letter.")
+        if not re.search(r"[0-9]", password):
+            raise ValidationError("Password must contain at least one number.")
 
 # routes
 
@@ -85,7 +127,7 @@ def register_user():
             if not current_user.is_authenticated and form.role.data in ["admin", "provider"]:
                 return render_template('register-user.html' , form=form , errors=["User must be authenticated"])
 
-            # Look up Role by name; User.role expects a Role instance, not a string
+            # Look up Role by name
             role = db.session.scalar(select(Role).where(Role.name == form.role.data))
             if not role:
                 return render_template('register-user.html', form=form, errors=["Invalid role"])
@@ -109,6 +151,10 @@ def register_user():
 @app.route("/login" , methods=["GET" , "POST"])
 def login():
     return render_template('login.html')
+
+@app.route("/dashboard" , methods=["GET"])
+def dashboard():
+    return render_template('dashboard.html')
 
 if __name__ == "__main__":
     app.run(debug=True)
