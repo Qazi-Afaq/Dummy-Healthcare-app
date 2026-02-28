@@ -26,8 +26,18 @@
     {{ form.username.label }} {{ form.username(size=32) }}
     {{ form.email.label }} {{ form.email(size=32) }}
     {{ form.password.label }} {{ form.password(size=32) }}
+    <!--  if current user role is admin -->
+    {% if current_user.role.name == "admin" %}
+    <!-- a select choice for role so an admin can select admin,patient or provider  -->
+     <select name="role">
+        <option value="admin">Admin</option>
+        <option value="patient">Patient</option>
+        <option value="provider">Provider</option>
+     </select>
+    {% else %}
     <!-- for self registration role is patient and will be validated in the backend route -->
     <input type="hidden" name="role" value="patient">
+    {% endif %}
     {{ form.confirm.label }} {{ form.confirm(size=32) }}
     {{ form.submit() }}
 </form>

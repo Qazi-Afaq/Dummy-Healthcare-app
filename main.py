@@ -3,7 +3,7 @@ from models import (db , User , Role)
 from sqlalchemy import (select)
 from wtforms import BooleanField, StringField, PasswordField, validators, SelectField, SubmitField
 from flask_wtf import FlaskForm
-from flask_login import LoginManager, login_user, current_user, login_required
+from flask_login import LoginManager, login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
@@ -134,19 +134,23 @@ class LoginForm(FlaskForm):
 # routes
 
 # default page -> go to self registraton user
-@app.route("/" , methods=["GET" , "POST"])
+@app.route("/register-user" , methods=["GET" , "POST"])
 def register_user():
+    # if current user is authenticated then redirect to home
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
+
     if request.method == "POST":
         form = RegistrationForm(request.form)        
         if form.validate_on_submit():
             # user must be authenticated if role is not patient
             if not current_user.is_authenticated and form.role.data in ["admin", "provider"]:
-                return render_template('register-user.html' , form=form , errors=["User must be authenticated"])
+                return render_template('register-user.html' , form=form , errors=[{"error": ["User must be authenticated"]}])
 
             # Look up Role by name
             role = db.session.scalar(select(Role).where(Role.name == form.role.data))
             if not role:
-                return render_template('register-user.html', form=form, errors=["Invalid role"])
+                return render_template('register-user.html', form=form, errors=[{"error": ["Invalid role"]}])
 
             # register the user(patient,admin,provider)
             new_user = User(
@@ -157,7 +161,6 @@ def register_user():
             )
             db.session.add(new_user)
             db.session.commit()
-            login_user(new_user)
             return redirect(url_for('login'))
         else:
             return render_template('register-user.html' , form=form , errors=form.errors)
@@ -166,23 +169,34 @@ def register_user():
 
 @app.route("/login" , methods=["GET" , "POST"])
 def login():
+
+    # if current user is authenticated then redirect to home
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
+
     if request.method == "POST":
         form = LoginForm(request.form)
         if form.validate_on_submit():
             user = db.session.scalar(select(User).where(User.email == form.email.data))
             if user and check_password_hash(user.password, form.password.data):
                 login_user(user)
-                return redirect(url_for('dashboard'))
+                return redirect(url_for('home'))
             else:
-                return render_template('login.html' , form=form , errors={"_form": ["Invalid email or password"]})
+                return render_template('login.html' , form=form , errors={"error": ["Invalid email or password"]})
         else:
             return render_template('login.html' , form=form , errors=form.errors)
     return render_template('login.html' , form=LoginForm())
 
-@app.route("/dashboard" , methods=["GET"])
+@app.route("/" , methods=["GET"])
 @login_required
-def dashboard():
-    return render_template('dashboard.html')
+def home():
+    return render_template('home.html')
+
+@app.route("/logout" , methods=["GET"])
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
 
 if __name__ == "__main__":
     app.run(debug=True)
