@@ -8,7 +8,22 @@
 
 </head>
 <body>
-    {% block body %} {% endblock%}
+
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('home') }}">Home</a></li>
+            {% if not current_user.is_authenticated %}
+            <li><a href="{{ url_for('login') }}">Login</a></li>
+            {% endif %}
+            {% if current_user.is_authenticated %}
+            <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            {% endif %}
+            <li><a href="{{ url_for('register_user') }}">Register User</a></li>
+        </ul>
+    </nav>
+
+    {% block body %}{% endblock %}
 
 </body>
+
 </html>

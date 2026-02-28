@@ -51,7 +51,7 @@ with app.app_context():
         super_user = User(
             username = "superuser",
             email = "superuser@ltu.ac.uk",
-            password = "abc", # later get from .env for security
+            password = generate_password_hash("Testtest1"), # later get from .env for security
             role=admin_role
         )
         db.session.add(super_user)
@@ -136,10 +136,6 @@ class LoginForm(FlaskForm):
 # default page -> go to self registraton user
 @app.route("/register-user" , methods=["GET" , "POST"])
 def register_user():
-    # if current user is authenticated then redirect to home
-    if current_user.is_authenticated:
-        return redirect(url_for('home'))
-
     if request.method == "POST":
         form = RegistrationForm(request.form)        
         if form.validate_on_submit():
