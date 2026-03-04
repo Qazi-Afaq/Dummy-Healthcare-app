@@ -59,7 +59,7 @@ with app.app_context():
 
     db.session.commit()
 
-# forms
+# =============================== Forms ===============================
 from wtforms import ValidationError
 import re
 
@@ -131,7 +131,8 @@ class LoginForm(FlaskForm):
     )
     submit = SubmitField('Login')
 
-# routes
+
+# =============================== Routes ===============================
 
 # default page -> go to self registraton user
 @app.route("/register-user" , methods=["GET" , "POST"])
