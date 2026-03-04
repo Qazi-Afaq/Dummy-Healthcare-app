@@ -18,7 +18,12 @@
             {% if current_user.is_authenticated %}
             <li><a href="{{ url_for('logout') }}">Logout</a></li>
             {% endif %}
+            {% if current_user.is_authenticated and current_user.role.name == "admin" %}
             <li><a href="{{ url_for('register_user') }}">Register User</a></li>
+            {% endif %}
+            {% if not current_user.is_authenticated %}
+            <li><a href="{{ url_for('self_register_patient') }}">Self Register Patient</a></li>
+            {% endif %}
         </ul>
     </nav>
 

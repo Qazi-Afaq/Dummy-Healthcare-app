@@ -137,12 +137,16 @@ class LoginForm(FlaskForm):
 # default page -> go to self registraton user
 @app.route("/register-user" , methods=["GET" , "POST"])
 def register_user():
+
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+
     if request.method == "POST":
         form = RegistrationForm(request.form)        
         if form.validate_on_submit():
-            # user must be authenticated if role is not patient
-            if not current_user.is_authenticated and form.role.data in ["admin", "provider"]:
-                return render_template('register-user.html' , form=form , errors=[{"error": ["User must be authenticated"]}])
+            # user must be authenticated and an admin
+            if current_user.is_authenticated and current_user.role.name == "admin":
+                return render_template('register-user.html' , form=form , errors=[{"error": ["User must be authenticated and an admin"]}])
 
             # Look up Role by name
             role = db.session.scalar(select(Role).where(Role.name == form.role.data))
@@ -163,6 +167,34 @@ def register_user():
             return render_template('register-user.html' , form=form , errors=form.errors)
     
     return render_template('register-user.html' , form=RegistrationForm())
+
+# register patient for unauthenticated users or users who are not logged in
+@app.route("/self-register-patient" , methods=["GET" , "POST"])
+def self_register_patient():
+    # if current user is authenticated redirect to home
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
+
+    if request.method == "POST":
+        form = RegistrationForm(request.form)
+        if form.validate_on_submit():
+            # role must be patient
+            if not form.role.data == "patient":
+                return render_template('self-register-patient.html' , form=form , errors=[{"error": ["Role must be patient"]}])
+
+            # register the patient
+            new_patient = User(
+                username=form.username.data,
+                email=form.email.data,
+                password=generate_password_hash(form.password.data),
+                role=db.session.scalar(select(Role).where(Role.name == "patient"))
+            )
+            db.session.add(new_patient)
+            db.session.commit()
+            return redirect(url_for('login'))
+        else:
+            return render_template('self-register-patient.html' , form=form , errors=form.errors)
+    return render_template('self-register-patient.html' , form=RegistrationForm())
 
 @app.route("/login" , methods=["GET" , "POST"])
 def login():

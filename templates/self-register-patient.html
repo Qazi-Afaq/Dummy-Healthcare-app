@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block head %} 
+<title>Self Register Patient</title>
+{% endblock%}
+
+{% block body %} 
+<h3>Self Register Patient</h3>
+
+<form method="POST" action="{{ url_for('self_register_patient') }}">
+    {{ form.hidden_tag() }}
+    {{ form.username.label }} {{ form.username(size=32) }}
+    {{ form.email.label }} {{ form.email(size=32) }}
+    {{ form.password.label }} {{ form.password(size=32) }}
+    <!-- role is default to "patient" and it is hidden from the user -->
+    <input type="hidden" name="role" value="patient">
+    {{ form.confirm.label }} {{ form.confirm(size=32) }}
+    {{ form.submit() }}
+</form>
+{% endblock%}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
