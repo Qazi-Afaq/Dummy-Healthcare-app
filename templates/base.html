@@ -24,6 +24,10 @@
             {% if not current_user.is_authenticated %}
             <li><a href="{{ url_for('self_register_patient') }}">Self Register Patient</a></li>
             {% endif %}
+            <!-- add medical record of a patient -->
+            {% if current_user.is_authenticated and current_user.role.name == "admin" %}
+            <li><a href="{{ url_for('add_medical_record') }}">Add Medical Record</a></li>
+            {% endif %}
         </ul>
     </nav>
 

@@ -8,5 +8,46 @@
 <h1>home</h1>
 <p>Welcome {{ current_user.username }}</p>
 <p>You are logged in as {{ current_user.role.name }}</p>
+
+<!-- show medical records in a table with edit and delete button for each record -->
+ <h2>Medical Records</h2>
+
+ <table>
+
+    <thead>
+        <tr>
+            <th>Age</th>
+            <th>Sex</th>
+            <th>Dataset</th>
+            <th>CP</th>
+            <th>Trestbps</th>
+            <th>Chol</th>
+            <th>FBS</th>
+            <th>Restecg</th>
+            <th>Thalach</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for medical_record in medical_records %}
+            <tr>
+                <td>{{ medical_record.age }}</td>
+                <td>{{ medical_record.sex }}</td>
+                <td>{{ medical_record.dataset }}</td>
+                <td>{{ medical_record.cp }}</td>
+                <td>{{ medical_record.trestbps }}</td>
+                <td>{{ medical_record.chol }}</td>
+                <td>{{ medical_record.fbs }}</td>
+                <td>{{ medical_record.restecg }}</td>
+                <td>{{ medical_record.thalach }}</td>
+                <td>
+                    <a href="{{ url_for('edit_medical_record', medical_record_id=medical_record.id) }}">Edit</a>
+                </td>
+                <td>
+                    <a href="{{ url_for('delete_medical_record', medical_record_id=medical_record.id) }}">Delete</a>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+ </table>
 {% endblock%}
 

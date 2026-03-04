@@ -1,7 +1,7 @@
 from flask import Flask , render_template , request , url_for , redirect
 from models import (db , User , Role , MedicalRecord)
 from sqlalchemy import (select)
-from wtforms import BooleanField, StringField, PasswordField, validators, SelectField, SubmitField
+from wtforms import BooleanField, StringField, PasswordField, validators, SelectField, SubmitField, IntegerField
 from flask_wtf import FlaskForm
 from flask_login import LoginManager, login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -118,6 +118,8 @@ with app.app_context():
             trestbps=145,
             chol=233,
             fbs=True,
+            restecg="lv hypertrophy",
+            thalach=150,
             user=patient1
         )
         db.session.add(medical_record1)
@@ -128,6 +130,11 @@ with app.app_context():
             sex="Male",
             dataset="Cleveland",
             cp="asymptomatic",
+            trestbps=160,
+            chol=286,
+            fbs=False,
+            restecg="lv hypertrophy",
+            thalach=108,
             user=patient1
         )
         db.session.add(medical_record2)
@@ -138,6 +145,11 @@ with app.app_context():
             sex="Male",
             dataset="Cleveland",
             cp="asymptomatic",
+            trestbps=120,
+            chol=229,
+            fbs=False,
+            restecg="lv hypertrophy",
+            thalach=129,
             user=patient1
         )
         db.session.add(medical_record3)
@@ -148,6 +160,11 @@ with app.app_context():
             sex="Male",
             dataset="Cleveland",
             cp="non-anginal",
+            trestbps=130,
+            chol=250,
+            fbs=False,
+            restecg="normal",
+            thalach=187,
             user=patient1
         )
         db.session.add(medical_record4)
@@ -158,6 +175,11 @@ with app.app_context():
             sex="Female",
             dataset="Cleveland",
             cp="atypical angina",
+            trestbps=130,
+            chol=204,
+            fbs=False,
+            restecg="lv hypertrophy",
+            thalach=172,
             user=patient2
         )
         db.session.add(medical_record5)
@@ -168,6 +190,11 @@ with app.app_context():
             sex="Male",
             dataset="Cleveland",
             cp="atypical angina",
+            trestbps=120,
+            chol=236,
+            fbs=False,
+            restecg="normal",
+            thalach=178,
             user=patient1
         )
         db.session.add(medical_record6)
@@ -178,6 +205,11 @@ with app.app_context():
             sex="Female",
             dataset="Cleveland",
             cp="asymptomatic",
+            trestbps=140,
+            chol=268,
+            fbs=False,
+            restecg="lv hypertrophy",
+            thalach=160,
             user=patient1
         )
         db.session.add(medical_record7)
@@ -257,6 +289,48 @@ class LoginForm(FlaskForm):
     )
     submit = SubmitField('Login')
 
+from wtforms import StringField, IntegerField, SelectField, BooleanField, SubmitField, validators
+from flask_wtf import FlaskForm
+
+class MedicalRecordForm(FlaskForm):
+    patient_email = StringField(
+        'Patient Email',
+        validators=[validators.DataRequired(), validators.Email(message="Invalid email format")]
+    )
+    age = IntegerField(
+        'Age',
+        validators=[validators.DataRequired(), validators.NumberRange(min=0, max=100)]
+    )
+    sex = SelectField(
+        'Sex',
+        choices=[('Male', 'Male'), ('Female', 'Female')],
+        validators=[validators.DataRequired()]
+    )
+    dataset = SelectField(
+        'Dataset',
+        choices=[('Cleveland', 'Cleveland'), ('Hungarian', 'Hungarian'), ('Switzerland', 'Switzerland')],
+        validators=[validators.DataRequired()]
+    )
+    cp = SelectField(
+        'CP',
+        choices=[('typical angina', 'typical angina'), 
+                 ('asymptomatic', 'asymptomatic'), 
+                 ('non-anginal', 'non-anginal'), 
+                 ('atypical angina', 'atypical angina')],
+        validators=[validators.DataRequired()]
+    )
+
+    # nullable fields
+    trestbps = IntegerField('Trestbps')   
+    chol = IntegerField('Chol')           
+    fbs = BooleanField('FBS')             
+    restecg = SelectField(
+        'Restecg',
+        choices=[('lv hypertrophy', 'lv hypertrophy'), ('normal', 'normal')]
+    )                                     
+    thalach = IntegerField('Thalach')     
+
+    submit = SubmitField('Add Medical Record')
 
 # =============================== Routes ===============================
 
@@ -342,16 +416,71 @@ def login():
             return render_template('login.html' , form=form , errors=form.errors)
     return render_template('login.html' , form=LoginForm())
 
-@app.route("/" , methods=["GET"])
-@login_required
-def home():
-    return render_template('home.html')
-
 @app.route("/logout" , methods=["GET"])
 @login_required
 def logout():
     logout_user()
     return redirect(url_for('login'))
+
+@app.route("/" , methods=["GET"])
+@login_required
+def home():
+    # if current user is a patient then show the patient home page with all their medical records
+    if current_user.role.name == "patient":
+        medical_records = db.session.scalars(select(MedicalRecord).where(MedicalRecord.user_id == current_user.id)).all()
+        return render_template('home.html' , medical_records=medical_records)
+    # else get the medical records of all the users and show them on home page
+    medical_records = db.session.scalars(select(MedicalRecord)).all()
+    return render_template('home.html' , medical_records=medical_records)
+
+# add a medical record of a patient
+@app.route("/add-medical-record" , methods=["GET" , "POST"])
+@login_required
+def add_medical_record():
+
+    # role of curreent user must be admin
+    if current_user.role.name != "admin":
+        # render custom html saying role must be admin
+        return "<h1>Role must be admin</h1>"
+
+    if request.method == "POST":
+        form = MedicalRecordForm(request.form)
+        if form.validate_on_submit():
+            # add the medical record
+            patient = db.session.scalar(select(User).where(User.email == form.patient_email.data))
+            if not patient:
+                return render_template('add-medical-record.html' , form=form , errors=[{"error": ["Patient not found"]}])
+            new_medical_record = MedicalRecord(
+                user_id=patient.id,
+                age=form.age.data,
+                sex=form.sex.data,
+                dataset=form.dataset.data,
+                cp=form.cp.data,
+                trestbps=form.trestbps.data,
+                chol=form.chol.data,
+                fbs=form.fbs.data,
+                restecg=form.restecg.data,
+                thalach=form.thalach.data,
+            )
+            db.session.add(new_medical_record)
+            db.session.commit()
+            return redirect(url_for('add_medical_record'))
+        else:
+            return render_template('add-medical-record.html' , form=form , errors=form.errors)
+    return render_template('add-medical-record.html' , form=MedicalRecordForm())
+
+# edit medical record
+@app.route("/edit-medical-record/<int:medical_record_id>" , methods=["GET" , "POST"])
+@login_required
+def edit_medical_record(medical_record_id):
+    pass
+
+# delete medical record
+@app.route("/delete-medical-record/<int:medical_record_id>" , methods=["GET"])
+@login_required
+def delete_medical_record(medical_record_id):
+    pass
+
 
 if __name__ == "__main__":
     app.run(debug=True)
