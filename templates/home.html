@@ -41,12 +41,15 @@
                 <td>{{ medical_record.fbs }}</td>
                 <td>{{ medical_record.restecg }}</td>
                 <td>{{ medical_record.thalach }}</td>
-                <td>
-                    <a href="{{ url_for('edit_medical_record', medical_record_id=medical_record.id) }}">Edit</a>
-                </td>
-                <td>
-                    <a href="{{ url_for('delete_medical_record', medical_record_id=medical_record.id) }}">Delete</a>
-                </td>
+                <!-- we only show EDIT and DELETE buttons if the current user is an admin -->
+                {% if current_user.role.name == "admin" %}
+                    <td>
+                        <a href="{{ url_for('edit_medical_record', medical_record_id=medical_record.id) }}">Edit</a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('delete_medical_record', medical_record_id=medical_record.id) }}">Delete</a>
+                    </td>
+                {% endif %}
             </tr>
         {% endfor %}
     </tbody>

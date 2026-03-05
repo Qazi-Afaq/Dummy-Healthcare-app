@@ -346,12 +346,12 @@ def register_user():
         if form.validate_on_submit():
             # user must be authenticated and an admin
             if current_user.is_authenticated and current_user.role.name == "admin":
-                return render_template('register-user.html' , form=form , errors=[{"error": ["User must be authenticated and an admin"]}])
+                return render_template('register-user.html' , form=form , errors={"error": ["User must be authenticated and an admin"]})
 
             # Look up Role by name
             role = db.session.scalar(select(Role).where(Role.name == form.role.data))
             if not role:
-                return render_template('register-user.html', form=form, errors=[{"error": ["Invalid role"]}])
+                return render_template('register-user.html', form=form, errors={"error": ["Invalid role"]})
 
             # register the user(patient,admin,provider)
             new_user = User(
@@ -380,7 +380,7 @@ def self_register_patient():
         if form.validate_on_submit():
             # role must be patient
             if not form.role.data == "patient":
-                return render_template('self-register-patient.html' , form=form , errors=[{"error": ["Role must be patient"]}])
+                return render_template('self-register-patient.html' , form=form , errors={"error": ["Role must be patient"]})
 
             # register the patient
             new_patient = User(
@@ -449,7 +449,7 @@ def add_medical_record():
             # add the medical record
             patient = db.session.scalar(select(User).where(User.email == form.patient_email.data))
             if not patient:
-                return render_template('add-medical-record.html' , form=form , errors=[{"error": ["Patient not found"]}])
+                return render_template('add-medical-record.html' , form=form , errors={"error": ["Patient not found"]})
             new_medical_record = MedicalRecord(
                 user_id=patient.id,
                 age=form.age.data,
@@ -485,7 +485,7 @@ def edit_medical_record(medical_record_id):
             # edit the medical record
             medical_record = db.session.get(MedicalRecord, medical_record_id)
             if not medical_record:
-                 return render_template('404.html' , errors=[{"error": ["Medical record not found"]}])
+                 return render_template('404.html' , errors={"error": ["Medical record not found"]})
             medical_record.age = form.age.data
             medical_record.sex = form.sex.data
             medical_record.dataset = form.dataset.data
@@ -503,7 +503,7 @@ def edit_medical_record(medical_record_id):
     # GET METHOD: return edit-medical-record html with the medical record filled in the form
     medical_record = db.session.get(MedicalRecord, medical_record_id)
     if not medical_record:
-        return redirect(url_for('home'))
+        return render_template('404.html' , errors={"error": ["Medical record not found"]})
     return render_template('edit-medical-record.html' , form=MedicalRecordForm(obj=medical_record) , medical_record=medical_record)
 
 
@@ -517,6 +517,14 @@ def delete_medical_record(medical_record_id):
     if current_user.role.name != "admin":
         # render custom html saying role must be admin
         return "<h1>Role must be admin</h1>"
+    
+    # delete the medical record
+    medical_record = db.session.get(MedicalRecord, medical_record_id)
+    if not medical_record:
+        return render_template('404.html' , errors={"error": ["Medical record not found"]})
+    db.session.delete(medical_record)
+    db.session.commit()
+    return redirect(url_for('home'))
 
 
 if __name__ == "__main__":
