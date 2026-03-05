@@ -7,6 +7,20 @@
 {% block body %} 
 <h3>Self Register Patient</h3>
 
+<!-- display errors if any -->
+{% if errors %}
+<div style="color: red;">
+    <h4>Invalid Form:</h4>
+    <ul>
+        {% for field, field_errors in errors.items() %}
+            {% for error in field_errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
 <form method="POST" action="{{ url_for('self_register_patient') }}">
     {{ form.hidden_tag() }}
     {{ form.username.label }} {{ form.username(size=32) }}

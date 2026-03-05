@@ -473,13 +473,50 @@ def add_medical_record():
 @app.route("/edit-medical-record/<int:medical_record_id>" , methods=["GET" , "POST"])
 @login_required
 def edit_medical_record(medical_record_id):
-    pass
+    # role of curreent user must be admin
+    if current_user.role.name != "admin":
+        # render custom html saying role must be admin
+        return "<h1>Role must be admin</h1>"
+
+    # POST METHOD: edit the medical record
+    if request.method == "POST":
+        form = MedicalRecordForm(request.form)
+        if form.validate_on_submit():
+            # edit the medical record
+            medical_record = db.session.get(MedicalRecord, medical_record_id)
+            if not medical_record:
+                 return render_template('404.html' , errors=[{"error": ["Medical record not found"]}])
+            medical_record.age = form.age.data
+            medical_record.sex = form.sex.data
+            medical_record.dataset = form.dataset.data
+            medical_record.cp = form.cp.data
+            medical_record.trestbps = form.trestbps.data
+            medical_record.chol = form.chol.data
+            medical_record.fbs = form.fbs.data
+            medical_record.restecg = form.restecg.data
+            medical_record.thalach = form.thalach.data
+            db.session.commit()
+            return redirect(url_for('home'))
+        else:
+            return render_template('404.html' , errors=form.errors)
+
+    # GET METHOD: return edit-medical-record html with the medical record filled in the form
+    medical_record = db.session.get(MedicalRecord, medical_record_id)
+    if not medical_record:
+        return redirect(url_for('home'))
+    return render_template('edit-medical-record.html' , form=MedicalRecordForm(obj=medical_record) , medical_record=medical_record)
+
+
+
 
 # delete medical record
 @app.route("/delete-medical-record/<int:medical_record_id>" , methods=["GET"])
 @login_required
 def delete_medical_record(medical_record_id):
-    pass
+    # role of curreent user must be admin
+    if current_user.role.name != "admin":
+        # render custom html saying role must be admin
+        return "<h1>Role must be admin</h1>"
 
 
 if __name__ == "__main__":

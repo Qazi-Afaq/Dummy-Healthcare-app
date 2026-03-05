@@ -16,6 +16,7 @@
 
     <thead>
         <tr>
+            <th>Email</th>
             <th>Age</th>
             <th>Sex</th>
             <th>Dataset</th>
@@ -30,6 +31,7 @@
     <tbody>
         {% for medical_record in medical_records %}
             <tr>
+                <td>{{ medical_record.user.email }}</td>
                 <td>{{ medical_record.age }}</td>
                 <td>{{ medical_record.sex }}</td>
                 <td>{{ medical_record.dataset }}</td>

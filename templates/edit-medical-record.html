@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block head %} 
+<title>Edit Medical Record</title>
+{% endblock%}
+
+{% block body %} 
+<h3>Edit Medical Record</h3>
+    <!-- display errors if any -->
+    {% if errors %}
+        <div style="color: red;">
+            <h4>Invalid Form:</h4>
+            <ul>
+                {% for field, field_errors in errors.items() %}
+                    {% for error in field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('edit_medical_record', medical_record_id=medical_record.id) }}">
+        {{ form.hidden_tag() }}
+        {{ form.patient_email.label }} {{ form.patient_email(value=medical_record.user.email) }}
+        {{ form.age.label }} {{ form.age() }}
+        {{ form.sex.label }} {{ form.sex() }}
+        {{ form.dataset.label }} {{ form.dataset() }}
+        {{ form.cp.label }} {{ form.cp() }}
+        {{ form.trestbps.label }} {{ form.trestbps() }}
+        {{ form.chol.label }} {{ form.chol() }}
+        {{ form.fbs.label }} {{ form.fbs() }}
+        {{ form.restecg.label }} {{ form.restecg() }}
+        {{ form.thalach.label }} {{ form.thalach() }}
+        {{ form.submit(value="Edit Medical Record") }}
+    </form>
+
+{% endblock%}
