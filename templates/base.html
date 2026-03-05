@@ -28,6 +28,8 @@
             {% if current_user.is_authenticated and current_user.role.name == "admin" %}
             <li><a href="{{ url_for('add_medical_record') }}">Add Medical Record</a></li>
             {% endif %}
+            <li><a href="{{ url_for('prescriptions') }}">Prescriptions</a></li>
+            <li><a href="{{ url_for('appointments') }}">Appointments</a></li>
         </ul>
     </nav>
 

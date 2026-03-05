@@ -6,12 +6,21 @@ from flask_wtf import FlaskForm
 from flask_login import LoginManager, login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from pymongo import MongoClient
+
+# Mongodatabase connection
+mongo_client = MongoClient("mongodb+srv://afaq2qazi_db_user:mongodb@cluster0.tjbgjyz.mongodb.net/") # later from .env
+mongo_db = mongo_client["assessment-1-db"]
+appointments_collection = mongo_db["appointments"]
+prescriptions_collection = mongo_db["prescriptions"]
 
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db.sqlite"
 app.config["SECRET_KEY"] = "get_from_env_later"
 db.init_app(app)
+
+
 
 # login manager
 login_manager = LoginManager()
@@ -526,6 +535,43 @@ def delete_medical_record(medical_record_id):
     db.session.commit()
     return redirect(url_for('home'))
 
+@app.route("/prescriptions", methods=["GET"])
+@login_required
+def prescriptions():
+
+    # patient only sees their prescriptions
+    if current_user.role.name == "patient":
+        prescriptions = list(
+            prescriptions_collection.find(
+                {"patient_email": current_user.email}
+            )
+        )
+    else:
+        prescriptions = list(prescriptions_collection.find())
+
+    return render_template(
+        "prescriptions.html",
+        prescriptions=prescriptions
+    )
+
+@app.route("/appointments", methods=["GET"])
+@login_required
+def appointments():
+
+    # if patient → only see their appointments
+    if current_user.role.name == "patient":
+        appointments = list(
+            appointments_collection.find(
+                {"patient_email": current_user.email}
+            )
+        )
+    else:
+        appointments = list(appointments_collection.find())
+
+    return render_template(
+        "appointments.html",
+        appointments=appointments
+    )
 
 if __name__ == "__main__":
     app.run(debug=True)
