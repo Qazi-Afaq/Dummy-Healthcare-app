@@ -1,24 +1,25 @@
 {% extends 'base.html' %}
 
-
-{% block head %} 
+{% block head %}
 <title>404 Error</title>
-{% endblock%}
+{% endblock %}
 
-{% block body %} 
-<h1>404 Error</h1>
-    <!-- display errors if any -->
+{% block body %}
+<div class="text-center py-5">
+    <h1 class="display-4 text-muted">404</h1>
+    <p class="lead">Page not found.</p>
     {% if errors %}
-        <div style="color: red;">
-            <h4>Invalid Form:</h4>
-            <ul>
-                {% for field, field_errors in errors.items() %}
-                    {% for error in field_errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
+    <div class="alert alert-danger text-start d-inline-block">
+        <h5 class="alert-heading">Invalid Form</h5>
+        <ul class="mb-0">
+            {% for field, field_errors in errors.items() %}
+                {% for error in field_errors %}
+                    <li>{{ error }}</li>
                 {% endfor %}
-            </ul>
-        </div>
+            {% endfor %}
+        </ul>
+    </div>
     {% endif %}
-<a href="{{ url_for('home') }}">Go to home</a>
-{% endblock%}
+    <a href="{{ url_for('home') }}" class="btn btn-primary">Go to Home</a>
+</div>
+{% endblock %}

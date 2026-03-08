@@ -1,29 +1,29 @@
 {% extends 'base.html' %}
 
 {% block body %}
-
-<h1>Prescriptions</h1>
-
-<table>
-
-<tr>
-    <th>Patient</th>
-    <th>Medication</th>
-    <th>Dosage</th>
-    <th>Instructions</th>
-    <th>Doctor</th>
-</tr>
-
-{% for p in prescriptions %}
-<tr>
-    <td>{{ p.patient_email }}</td>
-    <td>{{ p.medication }}</td>
-    <td>{{ p.dosage }}</td>
-    <td>{{ p.instructions }}</td>
-    <td>{{ p.prescribed_by }}</td>
-</tr>
-{% endfor %}
-
-</table>
-
+<h1 class="mb-4">Prescriptions</h1>
+<div class="table-responsive">
+    <table class="table table-striped table-hover table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Patient</th>
+                <th>Medication</th>
+                <th>Dosage</th>
+                <th>Instructions</th>
+                <th>Doctor</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in prescriptions %}
+            <tr>
+                <td>{{ p.patient_email }}</td>
+                <td>{{ p.medication }}</td>
+                <td>{{ p.dosage }}</td>
+                <td>{{ p.instructions }}</td>
+                <td>{{ p.prescribed_by }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}

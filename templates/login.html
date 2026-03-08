@@ -1,28 +1,41 @@
 {% extends 'base.html' %}
 
-{% block head %} 
+{% block head %}
 <title>Login</title>
-{% endblock%}
+{% endblock %}
 
-{% block body %} 
-<h1>Login</h1>
-<!-- display errors if any -->
-{% if errors %}
-<div style="color: red;">
-    <h4>Invalid Form:</h4>
-    <ul>
-        {% for field, field_errors in errors.items() %}
-            {% for error in field_errors %}
-                <li>{{ error }}</li>
-            {% endfor %}
-        {% endfor %}
-    </ul>
+{% block body %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h1 class="card-title h3 mb-4">Login</h1>
+                {% if errors %}
+                <div class="alert alert-danger">
+                    <h5 class="alert-heading">Invalid Form</h5>
+                    <ul class="mb-0">
+                        {% for field, field_errors in errors.items() %}
+                            {% for error in field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                <form method="POST" action="{{ url_for('login') }}">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.email.label(class="form-label") }}
+                        {{ form.email(class="form-control", size=32) }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.password.label(class="form-label") }}
+                        {{ form.password(class="form-control", size=32) }}
+                    </div>
+                    {{ form.submit(class="btn btn-primary w-100") }}
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
-{% endif %}
-<form method="POST" action="{{ url_for('login') }}">
-    {{ form.hidden_tag() }}
-    {{ form.email.label }} {{ form.email(size=32) }}
-    {{ form.password.label }} {{ form.password(size=32) }}
-    {{ form.submit() }}
-</form>
-{% endblock%}
+{% endblock %}

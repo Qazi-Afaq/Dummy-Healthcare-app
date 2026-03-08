@@ -1,38 +1,79 @@
 {% extends 'base.html' %}
 
-{% block head %} 
+{% block head %}
 <title>Edit Medical Record</title>
-{% endblock%}
+{% endblock %}
 
-{% block body %} 
-<h3>Edit Medical Record</h3>
-    <!-- display errors if any -->
-    {% if errors %}
-        <div style="color: red;">
-            <h4>Invalid Form:</h4>
-            <ul>
-                {% for field, field_errors in errors.items() %}
-                    {% for error in field_errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                {% endfor %}
-            </ul>
+{% block body %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h3 class="card-title mb-4">Edit Medical Record</h3>
+                {% if errors %}
+                <div class="alert alert-danger">
+                    <h5 class="alert-heading">Invalid Form</h5>
+                    <ul class="mb-0">
+                        {% for field, field_errors in errors.items() %}
+                            {% for error in field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                <form method="POST" action="{{ url_for('edit_medical_record', medical_record_id=medical_record.id) }}">
+                    {{ form.hidden_tag() }}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.patient_email.label(class="form-label") }}
+                            {{ form.patient_email(class="form-control", value=medical_record.user.email) }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.age.label(class="form-label") }}
+                            {{ form.age(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.sex.label(class="form-label") }}
+                            {{ form.sex(class="form-select") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.dataset.label(class="form-label") }}
+                            {{ form.dataset(class="form-select") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.cp.label(class="form-label") }}
+                            {{ form.cp(class="form-select") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.trestbps.label(class="form-label") }}
+                            {{ form.trestbps(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.chol.label(class="form-label") }}
+                            {{ form.chol(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                {{ form.fbs(class="form-check-input") }}
+                                {{ form.fbs.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.restecg.label(class="form-label") }}
+                            {{ form.restecg(class="form-select") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.thalach.label(class="form-label") }}
+                            {{ form.thalach(class="form-control") }}
+                        </div>
+                        <div class="col-12">
+                            {{ form.submit(class="btn btn-primary", value="Edit Medical Record") }}
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
-    {% endif %}
-
-    <form method="POST" action="{{ url_for('edit_medical_record', medical_record_id=medical_record.id) }}">
-        {{ form.hidden_tag() }}
-        {{ form.patient_email.label }} {{ form.patient_email(value=medical_record.user.email) }}
-        {{ form.age.label }} {{ form.age() }}
-        {{ form.sex.label }} {{ form.sex() }}
-        {{ form.dataset.label }} {{ form.dataset() }}
-        {{ form.cp.label }} {{ form.cp() }}
-        {{ form.trestbps.label }} {{ form.trestbps() }}
-        {{ form.chol.label }} {{ form.chol() }}
-        {{ form.fbs.label }} {{ form.fbs() }}
-        {{ form.restecg.label }} {{ form.restecg() }}
-        {{ form.thalach.label }} {{ form.thalach() }}
-        {{ form.submit(value="Edit Medical Record") }}
-    </form>
-
-{% endblock%}
+    </div>
+</div>
+{% endblock %}
