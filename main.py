@@ -5,19 +5,29 @@ from wtforms import BooleanField, StringField, PasswordField, validators, Select
 from flask_wtf import FlaskForm
 from flask_login import LoginManager, login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
-
+import os
+from dotenv import load_dotenv
 from pymongo import MongoClient
 
+load_dotenv()
+
+DEFAULT_USER_PASSWORD = os.getenv("DEFAULT_USER_PASSWORD", "Testtest1")
+MONGODB_URI = os.getenv("MONGODB_URI")
+MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "assessment-1-db")
+MONGODB_APPOINTMENTS_COLLECTION = os.getenv("MONGODB_APPOINTMENTS_COLLECTION", "appointments")
+MONGODB_PRESCRIPTIONS_COLLECTION = os.getenv("MONGODB_PRESCRIPTIONS_COLLECTION", "prescriptions")
+
+if not MONGODB_URI:
+    raise RuntimeError("MONGODB_URI environment variable is not set")
+
 # Mongodatabase connection
-mongo_client = MongoClient("mongodb+srv://afaq2qazi_db_user:mongodb@cluster0.tjbgjyz.mongodb.net/") # later from .env
-mongo_db = mongo_client["assessment-1-db"]
-appointments_collection = mongo_db["appointments"]
-prescriptions_collection = mongo_db["prescriptions"]
-
-
+mongo_client = MongoClient(MONGODB_URI)
+mongo_db = mongo_client[MONGODB_DB_NAME]
+appointments_collection = mongo_db[MONGODB_APPOINTMENTS_COLLECTION]
+prescriptions_collection = mongo_db[MONGODB_PRESCRIPTIONS_COLLECTION]
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db.sqlite"
-app.config["SECRET_KEY"] = "get_from_env_later"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///db.sqlite")
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-key-change-me")
 db.init_app(app)
 
 
@@ -60,7 +70,7 @@ with app.app_context():
         super_user = User(
             username="superuser",
             email="superuser@ltu.ac.uk",
-            password=generate_password_hash("Testtest1"),  # later get from .env for security
+            password=generate_password_hash(DEFAULT_USER_PASSWORD),
             role=admin_role
         )
         db.session.add(super_user)
@@ -72,7 +82,7 @@ with app.app_context():
         patient1 = User(
             username="patient1",
             email="patient1@ltu.ac.uk",
-            password=generate_password_hash("Testtest1"),
+            password=generate_password_hash(DEFAULT_USER_PASSWORD),
             role=db.session.scalar(select(Role).where(Role.name == "patient"))
         )
         db.session.add(patient1)
@@ -81,7 +91,7 @@ with app.app_context():
         patient2 = User(
             username="patient2",
             email="patient2@ltu.ac.uk",
-            password=generate_password_hash("Testtest1"),
+            password=generate_password_hash(DEFAULT_USER_PASSWORD),
             role=db.session.scalar(select(Role).where(Role.name == "patient"))
         )
         db.session.add(patient2)
@@ -90,7 +100,7 @@ with app.app_context():
         provider = User(
             username="provider",
             email="provider@ltu.ac.uk",
-            password=generate_password_hash("Testtest1"),
+            password=generate_password_hash(DEFAULT_USER_PASSWORD),
             role=db.session.scalar(select(Role).where(Role.name == "provider"))
         )
         db.session.add(provider)
@@ -343,19 +353,22 @@ class MedicalRecordForm(FlaskForm):
 
 # =============================== Routes ===============================
 
-# default page -> go to self registraton user
+# admins that register users
 @app.route("/register-user" , methods=["GET" , "POST"])
+@login_required
 def register_user():
 
-    if not current_user.is_authenticated:
-        return redirect(url_for('login'))
+    # user must be authenticated and an admin :
+    if not current_user.is_authenticated or current_user.role.name != "admin":
+        return  render_template('404.html' , errors={"error": ["User must be authenticated and an admin to do this action"]})
+
 
     if request.method == "POST":
         form = RegistrationForm(request.form)        
         if form.validate_on_submit():
             # user must be authenticated and an admin
-            if current_user.is_authenticated and current_user.role.name == "admin":
-                return render_template('register-user.html' , form=form , errors={"error": ["User must be authenticated and an admin"]})
+            if not current_user.is_authenticated or current_user.role.name != "admin":
+                return render_template('register-user.html' , form=form , errors={"error": ["User must be authenticated and an admin to do this action"]})
 
             # Look up Role by name
             role = db.session.scalar(select(Role).where(Role.name == form.role.data))
@@ -514,8 +527,6 @@ def edit_medical_record(medical_record_id):
     if not medical_record:
         return render_template('404.html' , errors={"error": ["Medical record not found"]})
     return render_template('edit-medical-record.html' , form=MedicalRecordForm(obj=medical_record) , medical_record=medical_record)
-
-
 
 
 # delete medical record
