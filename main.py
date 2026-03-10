@@ -1,17 +1,20 @@
 from flask import Flask , render_template , request , url_for , redirect
 from models import (db , User , Role , MedicalRecord)
 from sqlalchemy import (select)
-from wtforms import BooleanField, StringField, PasswordField, validators, SelectField, SubmitField, IntegerField
-from flask_wtf import FlaskForm
 from flask_login import LoginManager, login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
+from seed import seed_database
+
+from forms import (
+    RegistrationForm,
+    LoginForm,
+    MedicalRecordForm
+)
 
 load_dotenv()
-
-DEFAULT_USER_PASSWORD = os.getenv("DEFAULT_USER_PASSWORD", "Testtest1")
 MONGODB_URI = os.getenv("MONGODB_URI")
 MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "assessment-1-db")
 MONGODB_APPOINTMENTS_COLLECTION = os.getenv("MONGODB_APPOINTMENTS_COLLECTION", "appointments")
@@ -29,6 +32,9 @@ app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///db.sqlite")
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-key-change-me")
 db.init_app(app)
+
+# initialize and seed the database
+seed_database(app)
 
 
 
@@ -48,308 +54,8 @@ def load_user(user_id):
         return None
 
 
-# create pre seeded roles and superuser
-with app.app_context():
-    db.create_all()
 
-    # create roles if not created
-    role_names = ['admin', 'provider', 'patient']
 
-    for r in role_names:
-        existing_role = db.session.scalars(select(Role).where(Role.name == r)).first()
-
-        if not existing_role:
-            new_role = Role(name=r)
-            db.session.add(new_role)
-            print(f"Created new role {r}")
-
-    # if superuser does not exist then create one
-    if not db.session.scalar(select(User).where(User.role.has(name="admin"))):
-        # get role where name is admin
-        admin_role = db.session.scalar(select(Role).where(Role.name == "admin"))
-        super_user = User(
-            username="superuser",
-            email="superuser@ltu.ac.uk",
-            password=generate_password_hash(DEFAULT_USER_PASSWORD),
-            role=admin_role
-        )
-        db.session.add(super_user)
-        print(f"Superuser created.")
-
-    # if "patient1@ltu.ac.uk" does not exist then create it
-    if not db.session.scalar(select(User).where(User.email == "patient1@ltu.ac.uk")):
-        # create some dummy users, two patients and one provider
-        patient1 = User(
-            username="patient1",
-            email="patient1@ltu.ac.uk",
-            password=generate_password_hash(DEFAULT_USER_PASSWORD),
-            role=db.session.scalar(select(Role).where(Role.name == "patient"))
-        )
-        db.session.add(patient1)
-        print(f"Patient 1 created.")
-
-        patient2 = User(
-            username="patient2",
-            email="patient2@ltu.ac.uk",
-            password=generate_password_hash(DEFAULT_USER_PASSWORD),
-            role=db.session.scalar(select(Role).where(Role.name == "patient"))
-        )
-        db.session.add(patient2)
-        print(f"Patient 2 created.")
-
-        provider = User(
-            username="provider",
-            email="provider@ltu.ac.uk",
-            password=generate_password_hash(DEFAULT_USER_PASSWORD),
-            role=db.session.scalar(select(Role).where(Role.name == "provider"))
-        )
-        db.session.add(provider)
-        print(f"Provider created.")
-
-        # Make sure to flush so that patient1 and patient2 get their IDs
-        db.session.flush()
-
-        # we create some dummy medical records for the two patients from any combinations of the values below
-        """
-        id,age,sex,dataset,cp,trestbps,chol,fbs,restecg,thalch,exang,oldpeak,slope,ca,thal,num
-        1,63,Male,Cleveland,typical angina,145,233,TRUE,lv hypertrophy,150,FALSE,2.3,downsloping,0,fixed defect,0
-        2,67,Male,Cleveland,asymptomatic,160,286,FALSE,lv hypertrophy,108,TRUE,1.5,flat,3,normal,2
-        3,67,Male,Cleveland,asymptomatic,120,229,FALSE,lv hypertrophy,129,TRUE,2.6,flat,2,reversable defect,1
-        4,37,Male,Cleveland,non-anginal,130,250,FALSE,normal,187,FALSE,3.5,downsloping,0,normal,0
-        5,41,Female,Cleveland,atypical angina,130,204,FALSE,lv hypertrophy,172,FALSE,1.4,upsloping,0,normal,0
-        6,56,Male,Cleveland,atypical angina,120,236,FALSE,normal,178,FALSE,0.8,upsloping,0,normal,0
-        7,62,Female,Cleveland,asymptomatic,140,268,FALSE,lv hypertrophy,160,FALSE,3.6,downsloping,2,normal,3
-        8,57,Female,Cleveland,asymptomatic,120,354,FALSE,normal,163,TRUE,0.6,upsloping,0,normal,0
-        9,63,Male,Cleveland,asymptomatic,130,254,FALSE,lv hypertrophy,147,FALSE,1.4,flat,1,reversable defect,2
-        10,53,Male,Cleveland,asymptomatic,140,203,TRUE,lv hypertrophy,155,TRUE,3.1,downsloping,0,reversable defect,1
-        11,57,Male,Cleveland,asymptomatic,140,192,FALSE,normal,148,FALSE,0.4,flat,0,fixed defect,0
-        12,56,Female,Cleveland,atypical angina,140,294,FALSE,lv hypertrophy,153,FALSE,1.3,flat,0,normal,0
-        13,56,Male,Cleveland,non-anginal,130,256,TRUE,lv hypertrophy,142,TRUE,0.6,flat,1,fixed defect,2
-        14,44,Male,Cleveland,atypical angina,120,263,FALSE,normal,173,FALSE,0,upsloping,0,reversable defect,0
-        15,52,Male,Cleveland,non-anginal,172,199,TRUE,normal,162,FALSE,0.5,upsloping,0,reversable defect,0
-        """
-
-        medical_record1 = MedicalRecord(
-            age=63,
-            sex="Male",
-            dataset="Cleveland",
-            cp="typical angina",
-            trestbps=145,
-            chol=233,
-            fbs=True,
-            restecg="lv hypertrophy",
-            thalach=150,
-            user=patient1
-        )
-        db.session.add(medical_record1)
-        print(f"Medical record 1 created.")
-
-        medical_record2 = MedicalRecord(
-            age=67,
-            sex="Male",
-            dataset="Cleveland",
-            cp="asymptomatic",
-            trestbps=160,
-            chol=286,
-            fbs=False,
-            restecg="lv hypertrophy",
-            thalach=108,
-            user=patient1
-        )
-        db.session.add(medical_record2)
-        print(f"Medical record 2 created.")
-
-        medical_record3 = MedicalRecord(
-            age=67,
-            sex="Male",
-            dataset="Cleveland",
-            cp="asymptomatic",
-            trestbps=120,
-            chol=229,
-            fbs=False,
-            restecg="lv hypertrophy",
-            thalach=129,
-            user=patient1
-        )
-        db.session.add(medical_record3)
-        print(f"Medical record 3 created.")
-
-        medical_record4 = MedicalRecord(
-            age=37,
-            sex="Male",
-            dataset="Cleveland",
-            cp="non-anginal",
-            trestbps=130,
-            chol=250,
-            fbs=False,
-            restecg="normal",
-            thalach=187,
-            user=patient1
-        )
-        db.session.add(medical_record4)
-        print(f"Medical record 4 created.")
-
-        medical_record5 = MedicalRecord(
-            age=41,
-            sex="Female",
-            dataset="Cleveland",
-            cp="atypical angina",
-            trestbps=130,
-            chol=204,
-            fbs=False,
-            restecg="lv hypertrophy",
-            thalach=172,
-            user=patient2
-        )
-        db.session.add(medical_record5)
-        print(f"Medical record 5 created.")
-
-        medical_record6 = MedicalRecord(
-            age=56,
-            sex="Male",
-            dataset="Cleveland",
-            cp="atypical angina",
-            trestbps=120,
-            chol=236,
-            fbs=False,
-            restecg="normal",
-            thalach=178,
-            user=patient1
-        )
-        db.session.add(medical_record6)
-        print(f"Medical record 6 created.")
-
-        medical_record7 = MedicalRecord(
-            age=62,
-            sex="Female",
-            dataset="Cleveland",
-            cp="asymptomatic",
-            trestbps=140,
-            chol=268,
-            fbs=False,
-            restecg="lv hypertrophy",
-            thalach=160,
-            user=patient1
-        )
-        db.session.add(medical_record7)
-        print(f"Medical record 7 created.")
-
-    db.session.commit()
-
-# =============================== Forms ===============================
-from wtforms import ValidationError
-import re
-
-class RegistrationForm(FlaskForm):
-    username = StringField(
-        'Username',
-        validators=[
-            validators.DataRequired(),
-            validators.Length(min=3, max=25)
-        ]
-    )
-    email = StringField(
-        'Email Address',
-        validators=[
-            validators.DataRequired(),
-            validators.Length(min=6, max=35),
-            validators.Email(message="Invalid email format")
-        ]
-    )
-    password = PasswordField(
-        'New Password',
-        validators=[
-            validators.DataRequired(),
-            validators.EqualTo('confirm', message='Passwords must match')
-        ]
-    )
-    confirm = PasswordField('Repeat Password')
-    role = SelectField(
-        'Role',
-        choices=[('admin', 'Admin'), ('provider', 'Provider'), ('patient', 'Patient')]
-    )
-    submit = SubmitField('Register')
-
-    # validate email uniqueness
-    def validate_email(self, field):
-        if db.session.scalar(select(User).where(User.email == field.data)):
-            raise ValidationError("Email already exists.")
-
-    # Custom validation for username
-    def validate_username(self, field):
-        if not field.data.isalnum():
-            raise ValidationError("Username must be alphanumeric.")
-
-    # Custom validation for password complexity
-    def validate_password(self, field):
-        password = field.data
-        if len(password) < 8:
-            raise ValidationError("Password must be at least 8 characters.")
-        if not re.search(r"[A-Z]", password):
-            raise ValidationError("Password must contain at least one uppercase letter.")
-        if not re.search(r"[0-9]", password):
-            raise ValidationError("Password must contain at least one number.")
-
-class LoginForm(FlaskForm):
-    email = StringField(
-        'Email Address',
-        validators=[
-            validators.DataRequired(),
-            validators.Length(min=6, max=35),
-            validators.Email(message="Invalid email format")
-        ]
-    )
-    password = PasswordField(
-        'Password',
-        validators=[
-            validators.DataRequired(),
-            validators.Length(min=8, max=25)
-        ]
-    )
-    submit = SubmitField('Login')
-
-from wtforms import StringField, IntegerField, SelectField, BooleanField, SubmitField, validators
-from flask_wtf import FlaskForm
-
-class MedicalRecordForm(FlaskForm):
-    patient_email = StringField(
-        'Patient Email',
-        validators=[validators.DataRequired(), validators.Email(message="Invalid email format")]
-    )
-    age = IntegerField(
-        'Age',
-        validators=[validators.DataRequired(), validators.NumberRange(min=0, max=100)]
-    )
-    sex = SelectField(
-        'Sex',
-        choices=[('Male', 'Male'), ('Female', 'Female')],
-        validators=[validators.DataRequired()]
-    )
-    dataset = SelectField(
-        'Dataset',
-        choices=[('Cleveland', 'Cleveland'), ('Hungarian', 'Hungarian'), ('Switzerland', 'Switzerland')],
-        validators=[validators.DataRequired()]
-    )
-    cp = SelectField(
-        'CP',
-        choices=[('typical angina', 'typical angina'), 
-                 ('asymptomatic', 'asymptomatic'), 
-                 ('non-anginal', 'non-anginal'), 
-                 ('atypical angina', 'atypical angina')],
-        validators=[validators.DataRequired()]
-    )
-
-    # nullable fields
-    trestbps = IntegerField('Trestbps')   
-    chol = IntegerField('Chol')           
-    fbs = BooleanField('FBS')             
-    restecg = SelectField(
-        'Restecg',
-        choices=[('lv hypertrophy', 'lv hypertrophy'), ('normal', 'normal')]
-    )                                     
-    thalach = IntegerField('Thalach')     
-
-    submit = SubmitField('Add Medical Record')
 
 # =============================== Routes ===============================
 
@@ -460,10 +166,9 @@ def home():
 @login_required
 def add_medical_record():
 
-    # role of curreent user must be admin
-    if current_user.role.name != "admin":
-        # render custom html saying role must be admin
-        return "<h1>Role must be admin</h1>"
+    if current_user.role.name not in ["admin", "provider"]:
+        # render custom html saying role must be admin or provider
+        return "<h1>Role must be admin or provider</h1>"
 
     if request.method == "POST":
         form = MedicalRecordForm(request.form)
@@ -486,7 +191,7 @@ def add_medical_record():
             )
             db.session.add(new_medical_record)
             db.session.commit()
-            return redirect(url_for('add_medical_record'))
+            return redirect(url_for('home'))
         else:
             return render_template('add-medical-record.html' , form=form , errors=form.errors)
     return render_template('add-medical-record.html' , form=MedicalRecordForm())
