@@ -1,0 +1,2 @@
+copy paste command to test XSS.
+sqlite3 db.sqlite "UPDATE user SET username='<script>alert(\"Hacked\")</script>' WHERE id=1;"

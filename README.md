@@ -25,6 +25,8 @@ DEFAULT_USER_PASSWORD: Password for seeded users (change in production)
 -- Project structure
 main.py: Flask app, routes, forms, and integration with SQLite and MongoDB.
 models.py: SQLAlchemy models (User, Role, MedicalRecord).
+forms.py: Flask-WTF forms to be rendered on front-end and validated.
+seed.py: For pre-populating database on executions where the database is empty.
 templates/: Jinja2 HTML templates.
 static/: CSS and static assets.
 tests/: Unit and integration tests.
