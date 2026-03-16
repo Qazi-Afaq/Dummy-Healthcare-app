@@ -1,3 +1,7 @@
+# AI ACKNOWLEDGEMENT
+This assignment used generative AI in the following ways for the purposes of completing assignment:
+Brainstorming, research, planning, feedbacking, editing
+
 # Secure Patient Management System (SPMS)
 
 # GITHUB LINK:
