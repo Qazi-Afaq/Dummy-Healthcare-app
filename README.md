@@ -1,5 +1,12 @@
 # Secure Patient Management System (SPMS)
 
+# GITHUB LINK:
+https://github.com/Qazi-Afaq/Dummy-Healthcare-app
+
+# DATASET USED:
+The data for this application has been downloaded from https://archive.ics.uci.edu/dataset/45/heart+disease
+and seeded by `seed.py` module on server start if the data does not already exist.
+
 This is a web based patient management system for a private healthcare provider. This applications allows clinicians and adminstrators to create , read, update/ and delete patient medical records. Patients can also view their own medical records.
 Patients can self register while admins and providers must be registered by administrators.
 
@@ -30,5 +37,15 @@ seed.py: For pre-populating database on executions where the database is empty.
 templates/: Jinja2 HTML templates.
 static/: CSS and static assets.
 tests/: Unit and integration tests.
+diagrams: design diagrams
 requirements.txt: Python dependencies.
 
+REFERENCES:
+Open Worldwide Application Security Project (OWASP). (2024). Cross-site request forgery prevention cheat sheet.
+https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html
+
+Open Worldwide Application Security Project (OWASP). (2024). Cross site scripting prevention cheat sheet.
+https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html
+
+Open Worldwide Application Security Project (OWASP). (2024). Authorization cheat sheet.
+https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html
